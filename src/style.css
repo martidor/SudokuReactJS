@@ -1,0 +1,45 @@
+.cellEditable {
+
+    border: 1px solid;
+    padding: 4px 9px 4px 9px;
+
+}
+
+.cellUneditable {
+    border: 1px solid;
+    padding: 4px 9px 4px 9px;
+    background: #e6e6e6;
+}
+
+.cellInConflict {
+    border: 1px solid;
+    padding: 4px 9px 4px 9px;
+    background: #fe386a;
+}
+
+.cellEditableBoxStyle {
+    border: 1px solid;
+    border-right: 3px solid;
+    padding: 4px 9px 4px 9px;
+}
+
+.cellInEditMode {
+    border: 1px solid;
+}
+
+.textAreaInEditMode {
+    border: none Transparent;
+    overflow: auto;
+    outline: none;
+    resize: none;
+    width: 6px;
+
+    /*-webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;*/
+}
+
+#board {
+    border-collapse: collapse;
+}
+ 

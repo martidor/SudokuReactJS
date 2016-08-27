@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sudoku</title>
+
+    <!--scripts required for ReactJS-->
+    <script src="../build/react.js"></script>
+    <script src="../build/react-dom.js"></script>
+    <script src="../build/browser.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+
+</head>
+<body>
+
+<div id="sudoku"></div>
+
+<script type="text/babel">
+
+
+    class Cell extends React.Component {
+
+        constructor(props) {
+            super(props);
+
+            this.state = {editing: false};
+        }
+
+        editCell() {
+            this.setState({editing: true});
+        }
+
+        editingDone() {
+            let number = this.refs.newNumber.value;
+            this.props.updateNumberInCell(number, this.props.index);
+            this.setState({editing: false});
+        }
+
+        renderEditing() {
+            /*return (<td><form><input defaultValue={this.props.children} max="9" min="0" type="number"/></form></td>);*/
+
+            return <td className="cellInEditMode"><textarea className="textAreaInEditMode" ref="newNumber" onBlur={this.editingDone.bind(this)} defaultValue={this.props.children}
+                                 maxLength="1" cols="1" rows="1" autoFocus /></td>;
+        }
+
+        renderNormal() {
+            if (this.props.editable) {
+                if (this.props.inConflict) {
+                    return <td className="cellInConflict" onClick={this.editCell.bind(this)}>{this.props.children}</td>;
+                } else {
+                    if (this.props.index === 2 || this.props.index === 5) {     //css for the box
+                        return <td className="cellEditableBoxStyle" onClick={this.editCell.bind(this)}>{this.props.children}</td>;
+                    }
+                    return <td className="cellEditable" onClick={this.editCell.bind(this)}>{this.props.children}</td>;
+                }
+            } else {
+                return <td className="cellUneditable">{this.props.children}</td>;
+            }
+        }
+
+        render() {
+            if (this.state.editing) {
+                return this.renderEditing();
+            } else {
+                return this.renderNormal();
+            }
+        }
+
+    }
+
+
+    class Board extends React.Component {
+
+        constructor(props) {
+            super(props);
+
+            let boardList = [];
+            let i = 0;
+            for (let r = 0; r < 9; r++) {
+                boardList.push([]);
+                for (let c = 0; c < 9; c++) {
+                    let number = this.props.boardString[i];
+                    if (number !== "0") {
+                        boardList[r].push(
+                                {
+                                    "index": i,
+                                    "number": number,
+                                    "editable": false,
+                                    "inConflict": false
+                                });
+                    } else {
+                        boardList[r].push({
+                            "index": i,
+                            "number": null,
+                            "editable": true,
+                            "inConflict": false
+                        });
+                    }
+                    i++;
+                }
+            }
+            console.log(JSON.stringify(boardList));
+
+            this.state = {boardList};
+
+            this.renderCell = this.renderCell.bind(this);
+            this.updateNumber = this.updateNumber.bind(this);
+        }
+
+        updateNumber(number, index) {
+            let newBoardList = this.state.boardList;        //makes a copy of the state so it can be changed without using setState
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (newBoardList[row][col].index === index) {
+                        console.log("row: " + row + " " + "col: " + col + " was changed");
+                        newBoardList[row][col].inConflict = false;
+                        newBoardList = this.checkRowForConflict(number, row, col, newBoardList);
+                        newBoardList = this.checkColForConflict(number, row, col, newBoardList);
+                        newBoardList = this.checkBoxForConflict(number, row, col, newBoardList);
+                        newBoardList[row][col].number = number;
+                        this.setState({boardList: newBoardList});
+                    }
+                }
+            }
+
+        }
+
+        checkRowForConflict(number, row, col, newBoardList) {
+            for (let c = 0; c < 9; c++) {
+                if (newBoardList[row][c].number === number && number != 0 && newBoardList[row][c].number !== null && newBoardList[row][c].number != "") {
+                    newBoardList[row][col].inConflict = true;
+                    console.log("object " + "row: " + row + " " + "col: " + col + "object: " + JSON.stringify(newBoardList[row][col]) + " is now in conflict with row");
+                    return newBoardList;
+                }
+            }
+            return newBoardList;
+        }
+
+        checkColForConflict(number, row, col, newBoardList) {
+            for (let r = 0; r < 9; r++) {
+                if (newBoardList[r][col].number === number && number != 0 && newBoardList[r][col].number !== null && newBoardList[r][col].number != "") {
+                    newBoardList[row][col].inConflict = true;
+                    console.log("object " + "row: " + row + " " + "col: " + col + "object: " + JSON.stringify(newBoardList[row][col]) + " is now in conflict with col");
+                    return newBoardList;
+                }
+            }
+            return newBoardList;
+        }
+
+        checkBoxForConflict(number, row, col, newBoardList) {
+            let rowStart = 0;
+            let colStart = 0;
+            if (row < 3) {
+                rowStart = 0;
+                if (col < 3) {
+                    colStart = 0;
+                }
+                else if ( col < 6) {
+                    colStart = 3;
+                }
+                else if (col < 9) {
+                    colStart = 6;
+                }
+            }
+            else if (row < 6) {
+                rowStart = 3;
+                if (col < 3) {
+                    colStart = 0;
+                }
+                else if ( col < 6) {
+                    colStart = 3;
+                }
+                else if (col < 9) {
+                    colStart = 6;
+                }
+            }
+            else if (row < 9) {
+                rowStart = 6;
+                if (col < 3) {
+                    colStart = 0;
+                }
+                else if ( col < 6) {
+                    colStart = 3;
+                }
+                else if (col < 9) {
+                    colStart = 6;
+                }
+            }
+            for (let r = rowStart; r < rowStart + 3; r++) {
+                for (let c = colStart; c < colStart + 3; c++) {
+                    if (newBoardList[r][c].number === number && number != 0 && newBoardList[r][col].number !== null && newBoardList[r][col].number != "") {
+                        newBoardList[row][col].inConflict = true;
+                        console.log("object " + "row: " + row + " " + "col: " + col + "object: " + JSON.stringify(newBoardList[row][col]) + " is now in conflict with box");
+                        return newBoardList;
+                    }
+                }
+            }
+            return newBoardList;
+        }
+
+        renderCell(cell, i) {
+            return (
+                    <Cell key={i} index={cell.index} editable={cell.editable} inConflict={cell.inConflict} updateNumberInCell={this.updateNumber}>{cell.number}</Cell>);
+        }
+
+        render() {
+            return (<div>                                                       {/*map means return a new array and do this function for each element in the list*/}
+                        <table id="board">
+                            <tbody>
+                            <tr>
+                                {this.state.boardList[0].map(this.renderCell)}
+                            </tr>
+                            <tr>
+                                {this.state.boardList[1].map(this.renderCell)}
+                            </tr>
+                            <tr>
+                                {this.state.boardList[2].map(this.renderCell)}
+                            </tr>
+                            <tr>
+                                {this.state.boardList[3].map(this.renderCell)}
+                            </tr>
+                            <tr>
+                                {this.state.boardList[4].map(this.renderCell)}
+                            </tr>
+                            <tr>
+                                {this.state.boardList[5].map(this.renderCell)}
+                            </tr>
+                            <tr>
+                                {this.state.boardList[6].map(this.renderCell)}
+                            </tr>
+                            <tr>
+                                {this.state.boardList[7].map(this.renderCell)}
+                            </tr>
+                            <tr>
+                                {this.state.boardList[8].map(this.renderCell)}
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+            );
+        }
+
+    }
+
+
+    ReactDOM.render(<Board boardString="000002003802730450000600870908005367006000100451300908084003000079051206200800000" />, document.getElementById("sudoku"));
+
+console.log("slutt");
+
+</script>
+
+</body>
+</html>
